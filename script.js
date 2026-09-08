@@ -2,7 +2,7 @@
 // Config
 // ----------------------------------------------------------------
 // Point this at wherever `uvicorn main:app` is running.
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "https://nyc-airbnb-room-type-predictor-1ksi.onrender.com";
 
 // The API only returns a probability array, not labelled classes.
 // scikit-learn classifiers expose `.classes_` in sorted order, and for

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Room Type Predictor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <div class="grid-bg" id="gridBg" aria-hidden="true"></div>
+
+  <div class="wrap">
+
+    <header class="site-head">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22">
+            <path d="M12 2 L21 8 V21 H3 V8 Z" fill="none" stroke="currentColor" stroke-width="1.4"
+              stroke-linejoin="round" />
+            <rect x="9.5" y="13" width="5" height="8" fill="currentColor" opacity="0.9" />
+          </svg>
+        </span>
+        <div class="brand-text">
+          <h1>Block Signal</h1>
+          <p>Reads a listing's numbers, calls the model, tells you what kind of room it is.</p>
+        </div>
+      </div>
+
+      <div class="api-status" id="apiStatus">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">Checking model…</span>
+      </div>
+    </header>
+
+    <main class="board">
+
+      <!-- LEFT: FORM -->
+      <section class="panel form-panel" aria-labelledby="formHeading">
+        <h2 id="formHeading">Listing details</h2>
+
+        <form id="predictForm" novalidate>
+
+          <fieldset>
+            <legend>Location</legend>
+            <div class="field-row">
+              <div class="field">
+                <label for="latitude">Latitude</label>
+                <input type="number" id="latitude" name="latitude" step="any" min="-90" max="90" placeholder="40.7128"
+                  required />
+                <span class="hint">−90 to 90</span>
+              </div>
+              <div class="field">
+                <label for="longitude">Longitude</label>
+                <input type="number" id="longitude" name="longitude" step="any" min="-180" max="180"
+                  placeholder="-74.0060" required />
+                <span class="hint">−180 to 180</span>
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="neighbourhood_group">Borough</label>
+                <select id="neighbourhood_group" name="neighbourhood_group" required>
+                  <option value="" disabled selected>Choose one</option>
+                  <option value="Manhattan">Manhattan</option>
+                  <option value="Brooklyn">Brooklyn</option>
+                  <option value="Queens">Queens</option>
+                  <option value="Bronx">Bronx</option>
+                  <option value="Staten Island">Staten Island</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="neighbourhood">Neighbourhood</label>
+                <input type="text" id="neighbourhood" name="neighbourhood" placeholder="Williamsburg" required />
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Pricing &amp; stay</legend>
+            <div class="field-row">
+              <div class="field">
+                <label for="price">Price per night ($)</label>
+                <input type="number" id="price" name="price" step="any" min="0.01" placeholder="150" required />
+                <span class="hint">Must be greater than 0</span>
+              </div>
+              <div class="field">
+                <label for="minimum_nights">Minimum nights</label>
+                <input type="number" id="minimum_nights" name="minimum_nights" step="1" min="1" max="365"
+                  placeholder="3" required />
+                <span class="hint">1 to 365</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="availability_365">Days available this year</label>
+              <input type="range" id="availability_365" name="availability_365" min="0" max="365" value="180"
+                required />
+              <span class="range-value" id="availabilityValue">180 days</span>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Reviews &amp; host</legend>
+            <div class="field-row">
+              <div class="field">
+                <label for="number_of_reviews">Total reviews</label>
+                <input type="number" id="number_of_reviews" name="number_of_reviews" step="1" min="0" placeholder="24"
+                  required />
+              </div>
+              <div class="field">
+                <label for="reviews_per_month">Reviews / month</label>
+                <input type="number" id="reviews_per_month" name="reviews_per_month" step="any" min="0"
+                  placeholder="1.2" required />
+              </div>
+            </div>
+            <div class="field">
+              <label for="calculated_host_listings_count">Listings by this host</label>
+              <input type="number" id="calculated_host_listings_count" name="calculated_host_listings_count" step="1"
+                min="0" placeholder="1" required />
+            </div>
+          </fieldset>
+
+          <div class="form-footer">
+            <button type="button" class="ghost-btn" id="fillSample">Use sample listing</button>
+            <button type="submit" class="predict-btn" id="predictBtn">
+              <span class="btn-label">Predict room type</span>
+              <span class="btn-spinner" aria-hidden="true">
+                <i></i><i></i><i></i>
+              </span>
+            </button>
+          </div>
+          <p class="form-error" id="formError" role="alert"></p>
+        </form>
+      </section>
+
+      <!-- RIGHT: RESULT -->
+      <section class="panel result-panel" aria-labelledby="resultHeading" aria-live="polite">
+        <h2 id="resultHeading">Prediction</h2>
+
+        <div class="result-empty" id="resultEmpty">
+          <svg viewBox="0 0 64 64" width="52" height="52" aria-hidden="true">
+            <circle cx="32" cy="32" r="30" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.4" />
+            <path d="M20 34 L28 42 L44 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" opacity="0.5" />
+          </svg>
+          <p>Fill in a listing and predict — the result lands here.</p>
+        </div>
+
+        <div class="result-card" id="resultCard" hidden>
+          <span class="result-eyebrow">Most likely</span>
+          <h3 class="result-type" id="resultType">—</h3>
+          <p class="result-sub" id="resultConfidence">—</p>
+
+          <div class="bars" id="bars"></div>
+
+          <details class="raw-details">
+            <summary>Raw output</summary>
+            <pre id="rawOutput" class="mono"></pre>
+          </details>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="site-foot">
+      <p>Calls <code class="mono">POST /predict</code> on your FastAPI service. Set the address in <code
+          class="mono">script.js</code> if it isn't running on <code class="mono">localhost:8000</code>.</p>
+    </footer>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
